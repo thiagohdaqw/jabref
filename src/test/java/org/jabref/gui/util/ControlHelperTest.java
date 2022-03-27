@@ -15,6 +15,7 @@ public class ControlHelperTest {
     private final String ELLIPSIS_STRING = "***";
     private final ControlHelper.EllipsisPosition ELLIPSIS_POSITION = ControlHelper.EllipsisPosition.ENDING;
 
+    // Caso de teste 1 e 2
     @ParameterizedTest
     @NullAndEmptySource
     void truncateWithTextNullAndEmptyReturnsSource(String text){
@@ -22,24 +23,28 @@ public class ControlHelperTest {
         assertEquals(text, truncatedText);
     }
 
+    // Caso de teste 3
     @Test
     void truncateWithDefaultMaxCharactersReturnsText(){
         String truncatedText = ControlHelper.truncateString(TEXT, DEFAULT_MAX_CHARACTERS, ELLIPSIS_STRING, ELLIPSIS_POSITION);
         assertEquals(TEXT, truncatedText);
     }
 
+    // Caso de teste 4
     @Test
     void truncateWithEllipsisPositionBeginningReturnsTruncatedText(){
         String truncatedText = ControlHelper.truncateString(TEXT, MAX_CHARACTERS, ELLIPSIS_STRING, ControlHelper.EllipsisPosition.BEGINNING);
         assertEquals("***ef", truncatedText);
     }
 
+    // Caso de teste 5
     @Test
     void truncateWithEllipsisPositionCenterReturnsTruncatedText(){
         String truncatedText = ControlHelper.truncateString(TEXT, MAX_CHARACTERS, ELLIPSIS_STRING, ControlHelper.EllipsisPosition.CENTER);
         assertEquals("a***f", truncatedText);
     }
 
+    // Caso de teste 6
     @Test
     void truncateWithDefaultMaxCharactersAndNullEllipsisAndPositionEndingReturnsTruncatedText(){
         String text = "a".repeat(75) + "b".repeat(25);
@@ -47,6 +52,7 @@ public class ControlHelperTest {
         assertEquals("a".repeat(75), truncatedText);
     }
 
+    // Caso de teste 7
     @ParameterizedTest
     @NullSource
     void truncateWithNullEllipsisPositionThrowsNullPointerException(ControlHelper.EllipsisPosition ellipsisPosition){
