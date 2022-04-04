@@ -65,6 +65,7 @@ public class ExporterFactory {
         exporters.add(new XmpExporter(xmpPreferences));
         exporters.add(new XmpPdfExporter(xmpPreferences));
         exporters.add(new EmbeddedBibFilePdfExporter(bibDatabaseMode, entryTypesManager, savePreferences.getFieldWriterPreferences()));
+        exporters.add(new JsonExporter());
 
         // Now add custom export formats
         exporters.addAll(customFormats);
