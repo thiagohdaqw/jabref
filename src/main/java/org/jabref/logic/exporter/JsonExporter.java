@@ -28,7 +28,7 @@ public class JsonExporter extends Exporter {
      */
     @Override
     public void export(BibDatabaseContext databaseContext, Path file, List<BibEntry> entries) throws Exception {
-        String expected =
+        String content =
                 "{\n" +
                 "\"references\": [\n" +
                 "    \"id\": \"entry1\"\n" +
@@ -39,10 +39,14 @@ public class JsonExporter extends Exporter {
                 "]\n" +
                 "}\n";
 
+        writeToFile(content, file);
+    }
 
+    private void writeToFile(String content, Path file) throws Exception{
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            writer.write(expected);
+            writer.write(content);
             writer.flush();
         }
     }
+
 }
