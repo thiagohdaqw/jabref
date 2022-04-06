@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -43,7 +44,7 @@ public class JsonExporter extends Exporter {
     private JsonArray parseEntriesToJson(List<BibEntry> entries){
         JsonArray entriesJson = new JsonArray();
 
-        entries.forEach(e -> entriesJson.add(parseEntryTojson(e)));
+        entriesJson.add(parseEntryTojson(entries.stream().findFirst().get()));
 
         return entriesJson;
     }
@@ -53,16 +54,21 @@ public class JsonExporter extends Exporter {
 
         entryJson.addProperty("type", entry.getType().getName());
 
-        entry.getFields().forEach(f ->
-            entry.getField(f).ifPresent(v -> {
-                if(f.isNumeric()){
-                    entryJson.addProperty(f.getName(), Integer.parseInt(v));
-                } else {
-                    entryJson.addProperty(f.getName(), v);
-                }
-            })
-        );
+        entry.getFields().forEach(f -> addFieldInJson(entryJson, f, entry.getField(f)));
+
         return entryJson;
+    }
+
+    private void addFieldInJson(JsonObject object, Field field, Optional<String> value){
+        if (value.isEmpty()) {
+            return;
+        }
+
+        if (field.isNumeric()) {
+            object.addProperty(field.getName(), Integer.parseInt(value.get()));
+            return;
+        }
+        object.addProperty(field.getName(), value.get());
     }
 
     private void writeToFile(String content, Path file) throws Exception{

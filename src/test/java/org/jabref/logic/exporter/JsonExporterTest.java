@@ -6,6 +6,7 @@ import org.jabref.model.database.BibDatabaseContext;
 import org.jabref.model.database.BibDatabaseMode;
 import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.BibEntryTypesManager;
+import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.StandardField;
 import org.jabref.model.entry.types.StandardEntryType;
 import org.junit.jupiter.api.AfterEach;
@@ -15,12 +16,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Answers;
+import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -92,6 +95,34 @@ public class JsonExporterTest {
                 "    {",
                 "      \"type\": \"book\",",
                 "      \"" + field.getName() + "\": 2000",
+                "    }",
+                "  ]",
+                "}"
+        );
+
+        assertEquals(expected, Files.readAllLines(file));
+    }
+
+    @Test
+    public void exportsIgnoreNullField(@TempDir Path tempFile) throws Exception {
+        BibEntry entry = Mockito.spy(new BibEntry(StandardEntryType.Collection))
+                .withField(StandardField.AUTHOR, "Dijkstra")
+                .withField(StandardField.DATE, "2022-02-02");
+
+        Field authorField = entry.getFields().stream().filter(e -> e.getName().equals(StandardField.AUTHOR.getName())).findFirst().get();
+        Mockito.when(entry.getField(authorField)).thenReturn(Optional.empty());
+
+        Path file = tempFile.resolve("TDDTestFileName");
+        Files.createFile(file);
+
+        exporter.export(databaseContext, file, Collections.singletonList(entry));
+
+        List<String> expected = List.of(
+                "{",
+                "  \"references\": [",
+                "    {",
+                "      \"type\": \"collection\",",
+                "      \"date\": \"2022-02-02\"",
                 "    }",
                 "  ]",
                 "}"
