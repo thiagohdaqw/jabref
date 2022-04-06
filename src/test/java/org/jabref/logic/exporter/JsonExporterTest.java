@@ -12,6 +12,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Answers;
 
 import java.nio.file.Files;
@@ -42,11 +44,14 @@ public class JsonExporterTest {
         databaseContext = new BibDatabaseContext();
     }
 
-    @Test
-    public final void exportsSingleEntryWithAuthorField(@TempDir Path tempFile) throws Exception {
+    @ParameterizedTest
+    @EnumSource(
+            value = StandardField.class,
+            names = { "AUTHOR", "URL", "DOI" }
+    )
+    public final void exportsSingleEntryWithSingleStringField(StandardField field, @TempDir Path tempFile) throws Exception {
         BibEntry entry = new BibEntry(StandardEntryType.Article)
-                .withCitationKey("entry1")
-                .withField(StandardField.AUTHOR, "Author 1");
+                .withField(field, "valor");
 
         Path file = tempFile.resolve("TDDTestFileName");
         Files.createFile(file);
@@ -55,14 +60,14 @@ public class JsonExporterTest {
 
         List<String> expected = List.of(
                 "{",
-                "\"references\": [",
-                "    \"id\": \"entry1\"",
-                "    \"type\": \"article\"",
-                "    \"author\": {",
-                "        \"literal\": \"Author 1\"",
+                "  \"references\": [",
+                "    {",
+                "      \"type\": \"article\",",
+                "      \"" + field.getName() + "\": \"valor\"",
                 "    }",
-                "]",
-                "}");
+                "  ]",
+                "}"
+                );
 
         assertEquals(expected, Files.readAllLines(file));
     }
