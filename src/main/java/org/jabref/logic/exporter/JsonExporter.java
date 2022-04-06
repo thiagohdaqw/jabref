@@ -53,9 +53,14 @@ public class JsonExporter extends Exporter {
 
         entryJson.addProperty("type", entry.getType().getName());
 
-        entry.getFields().forEach(
-                f -> entry.getField(f)
-                        .ifPresent(v -> entryJson.addProperty(f.getName(), v))
+        entry.getFields().forEach(f ->
+            entry.getField(f).ifPresent(v -> {
+                if(f.isNumeric()){
+                    entryJson.addProperty(f.getName(), Integer.parseInt(v));
+                } else {
+                    entryJson.addProperty(f.getName(), v);
+                }
+            })
         );
         return entryJson;
     }
