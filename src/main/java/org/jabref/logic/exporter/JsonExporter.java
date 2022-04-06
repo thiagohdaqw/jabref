@@ -44,7 +44,7 @@ public class JsonExporter extends Exporter {
     private JsonArray parseEntriesToJson(List<BibEntry> entries){
         JsonArray entriesJson = new JsonArray();
 
-        entriesJson.add(parseEntryTojson(entries.stream().findFirst().get()));
+        entries.forEach(e -> entriesJson.add(parseEntryTojson(e)));
 
         return entriesJson;
     }
@@ -64,11 +64,15 @@ public class JsonExporter extends Exporter {
             return;
         }
 
-        if (field.isNumeric()) {
-            object.addProperty(field.getName(), Integer.parseInt(value.get()));
-            return;
+        try {
+            if (field.isNumeric()) {
+                object.addProperty(field.getName(), Integer.parseInt(value.get()));
+                return;
+            }
+            object.addProperty(field.getName(), value.get());
+        } catch (NumberFormatException ex){
+            object.addProperty(field.getName(), value.get());
         }
-        object.addProperty(field.getName(), value.get());
     }
 
     private void writeToFile(String content, Path file) throws Exception{
