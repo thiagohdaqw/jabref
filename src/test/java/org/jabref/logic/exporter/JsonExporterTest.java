@@ -71,4 +71,32 @@ public class JsonExporterTest {
 
         assertEquals(expected, Files.readAllLines(file));
     }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = StandardField.class,
+            names = { "YEAR", "NUMBER", "EDITION" }
+    )
+    public final void exportsSingleEntryWithSingleNumericField(StandardField field, @TempDir Path tempFile) throws Exception {
+        BibEntry entry = new BibEntry(StandardEntryType.Book)
+                .withField(field, "2000");
+
+        Path file = tempFile.resolve("TDDTestFileName");
+        Files.createFile(file);
+
+        exporter.export(databaseContext, file, Collections.singletonList(entry));
+
+        List<String> expected = List.of(
+                "{",
+                "  \"references\": [",
+                "    {",
+                "      \"type\": \"book\",",
+                "      \"" + field.getName() + "\": 2000",
+                "    }",
+                "  ]",
+                "}"
+        );
+
+        assertEquals(expected, Files.readAllLines(file));
+    }
 }
