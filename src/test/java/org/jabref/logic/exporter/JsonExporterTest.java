@@ -1,5 +1,8 @@
 package org.jabref.logic.exporter;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.jabref.logic.layout.LayoutFormatterPreferences;
 import org.jabref.logic.xmp.XmpPreferences;
 import org.jabref.model.database.BibDatabaseContext;
@@ -30,11 +33,12 @@ import static org.mockito.Mockito.mock;
 
 public class JsonExporterTest {
 
-    public BibDatabaseContext databaseContext;
+    private BibDatabaseContext databaseContext;
     private Exporter exporter;
+    private Path file;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp(@TempDir Path tempFile) throws Exception{
         List<TemplateExporter> customFormats = new ArrayList<>();
         LayoutFormatterPreferences layoutPreferences = mock(LayoutFormatterPreferences.class, Answers.RETURNS_DEEP_STUBS);
         SavePreferences savePreferences = mock(SavePreferences.class);
@@ -45,6 +49,9 @@ public class JsonExporterTest {
 
         exporter = exporterFactory.getExporterByName("json").get();
         databaseContext = new BibDatabaseContext();
+
+        file = tempFile.resolve("TDDTestFileName");
+        Files.createFile(file);
     }
 
     @ParameterizedTest
@@ -52,12 +59,9 @@ public class JsonExporterTest {
             value = StandardField.class,
             names = { "AUTHOR", "URL", "DOI" }
     )
-    public final void exportsSingleEntryWithSingleStringField(StandardField field, @TempDir Path tempFile) throws Exception {
+    public void exportsSingleEntryWithSingleStringField(StandardField field) throws Exception {
         BibEntry entry = new BibEntry(StandardEntryType.Article)
                 .withField(field, "valor");
-
-        Path file = tempFile.resolve("TDDTestFileName");
-        Files.createFile(file);
 
         exporter.export(databaseContext, file, Collections.singletonList(entry));
 
@@ -80,12 +84,9 @@ public class JsonExporterTest {
             value = StandardField.class,
             names = { "YEAR", "NUMBER", "EDITION" }
     )
-    public final void exportsSingleEntryWithSingleNumericField(StandardField field, @TempDir Path tempFile) throws Exception {
+    public void exportsSingleEntryWithSingleNumericField(StandardField field) throws Exception {
         BibEntry entry = new BibEntry(StandardEntryType.Book)
                 .withField(field, "2000");
-
-        Path file = tempFile.resolve("TDDTestFileName");
-        Files.createFile(file);
 
         exporter.export(databaseContext, file, Collections.singletonList(entry));
 
@@ -104,16 +105,13 @@ public class JsonExporterTest {
     }
 
     @Test
-    public void exportsIgnoreNullField(@TempDir Path tempFile) throws Exception {
+    public void exportsIgnoreNullField() throws Exception {
         BibEntry entry = Mockito.spy(new BibEntry(StandardEntryType.Collection))
                 .withField(StandardField.AUTHOR, "Dijkstra")
                 .withField(StandardField.DATE, "2022-02-02");
 
         Field authorField = entry.getFields().stream().filter(e -> e.getName().equals(StandardField.AUTHOR.getName())).findFirst().get();
         Mockito.when(entry.getField(authorField)).thenReturn(Optional.empty());
-
-        Path file = tempFile.resolve("TDDTestFileName");
-        Files.createFile(file);
 
         exporter.export(databaseContext, file, Collections.singletonList(entry));
 
@@ -129,5 +127,38 @@ public class JsonExporterTest {
         );
 
         assertEquals(expected, Files.readAllLines(file));
+    }
+
+    @Test
+    public void exportsMultipleEntriesWithMultipleFields() throws Exception {
+        List<BibEntry> entries = List.of(
+            new BibEntry(StandardEntryType.Dataset)
+                    .withCitationKey("dij2")
+                    .withField(StandardField.TITLE, "Quanto mais barato melhor")
+                    .withField(StandardField.CREATIONDATE, "1975-05-02"),
+            new BibEntry(StandardEntryType.CodeFragment)
+                    .withField(StandardField.BOOKAUTHOR, "Alguem")
+                    .withField(StandardField.NUMBER, "2--4")
+        );
+
+        exporter.export(databaseContext, file, entries);
+
+        JsonObject jsonExported = new Gson().fromJson(Files.newBufferedReader(file), JsonObject.class);
+        assertEquals(2, jsonExported.get("references").getAsJsonArray().size());
+
+        JsonArray references = jsonExported.get("references").getAsJsonArray();
+
+        JsonObject entry1 = references.get(0).getAsJsonObject();
+        assertEquals(4, entry1.keySet().size());
+        assertEquals("dataset", entry1.get("type").getAsString());
+        assertEquals("dij2", entry1.get("citationkey").getAsString());
+        assertEquals("Quanto mais barato melhor", entry1.get("title").getAsString());
+        assertEquals("1975-05-02", entry1.get("creationdate").getAsString());
+
+        JsonObject entry2 = references.get(1).getAsJsonObject();
+        assertEquals(3, entry2.keySet().size());
+        assertEquals("codefragment", entry2.get("type").getAsString());
+        assertEquals("Alguem", entry2.get("bookauthor").getAsString());
+        assertEquals("2--4", entry2.get("number").getAsString());
     }
 }
